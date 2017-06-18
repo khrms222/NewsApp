@@ -19,7 +19,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
-    private EditText editText;
     private ProgressBar progressBar;
     private TextView textView;
 
@@ -28,7 +27,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        editText = (EditText) findViewById(R.id.searchQuery);
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
         textView = (TextView) findViewById(R.id.resultText);
     }
@@ -44,8 +42,7 @@ public class MainActivity extends AppCompatActivity {
         int itemNum = item.getItemId();
 
         if(itemNum == R.id.search){
-            String searchQuery = editText.getText().toString().replace(' ', '-');
-            NetworkTask networkTask = new NetworkTask(searchQuery);
+            NetworkTask networkTask = new NetworkTask();
             networkTask.execute();
         }
 
@@ -58,8 +55,8 @@ public class MainActivity extends AppCompatActivity {
         String sortBy;
         String apiKey;
 
-        NetworkTask(String searchQuery){
-            this.searchQuery = searchQuery;
+        NetworkTask(){
+            searchQuery = "the-next-web";
             sortBy = "latest";
             apiKey = "4bbc5a00be8d40448ad056a1acc0d68a";
         }

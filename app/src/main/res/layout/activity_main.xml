@@ -8,13 +8,6 @@
     android:padding="16dp"
     tools:context="com.example.ken.newsapp.MainActivity">
 
-
-    <EditText
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/searchQuery"
-        android:hint="@string/searchHint"/>
-
     <ProgressBar
         style="?android:attr/progressBarStyleLarge"
         android:layout_width="wrap_content"
