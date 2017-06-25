@@ -2,16 +2,18 @@ package com.example.ken.newsapp;
 
 import android.net.Uri;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Scanner;
-
-/**
- * Created by Donk on 6/16/2017.
- */
 
 public class NetworkUtils {
     public static final String NEWSAPI_BASE_URL = "https://newsapi.org/v1/articles";
@@ -52,5 +54,28 @@ public class NetworkUtils {
         }finally{
             urlConnection.disconnect();
         }
+    }
+
+    public static ArrayList<NewsItem> parseJSON(String json) throws JSONException{
+        ArrayList<NewsItem> newsItemsList = new ArrayList<NewsItem>();
+
+        JSONObject mainJSON = new JSONObject(json);
+        JSONArray articleList = mainJSON.getJSONArray("articles");
+
+        for(int i = 0; i < articleList.length(); i++){
+            JSONObject article = articleList.getJSONObject(i);
+
+            String author = article.getString("author");
+            String title = article.getString("title");
+            String description = article.getString("description");
+            String url = article.getString("url");
+            String urlToImage = article.getString("urlToImage");
+            String publishedAt = article.getString("publishedAt");
+
+            NewsItem newsItem = new NewsItem(author, title, description, url, urlToImage, publishedAt);
+            newsItemsList.add(newsItem);
+        }
+
+        return newsItemsList;
     }
 }

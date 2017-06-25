@@ -1,9 +1,13 @@
 package com.example.ken.newsapp;
 
+import android.content.Intent;
 import android.net.Network;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -12,15 +16,20 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
     private ProgressBar progressBar;
-    private TextView textView;
+    //private TextView textView;
+
+    private RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,7 +37,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        textView = (TextView) findViewById(R.id.resultText);
+        //textView = (TextView) findViewById(R.id.resultText);
+        recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
     }
 
     @Override
@@ -49,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    class NetworkTask extends AsyncTask<URL, Void, String>{
+    class NetworkTask extends AsyncTask<URL, Void, ArrayList<NewsItem>>{
 
         String searchQuery;
         String sortBy;
@@ -68,28 +80,46 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String doInBackground(URL... params) {
-            String result = null;
+        protected ArrayList<NewsItem> doInBackground(URL... params) {
+            ArrayList<NewsItem> newsItemsList = null;
             URL url = NetworkUtils.makeURL(searchQuery, sortBy, apiKey);
             Log.d(TAG, url.toString());
             try {
-                result = NetworkUtils.getResponseFromHttpUrl(url);
+                String result = NetworkUtils.getResponseFromHttpUrl(url);
+                newsItemsList = NetworkUtils.parseJSON(result);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return result;
+            catch (JSONException e){
+                e.printStackTrace();
+            }
+            return newsItemsList;
         }
 
         @Override
-        protected void onPostExecute(String s) {
-            super.onPostExecute(s);
+        protected void onPostExecute(final ArrayList<NewsItem> data) {
+            super.onPostExecute(data);
             progressBar.setVisibility(View.GONE);
 
-            if(s == null){
-                textView.setText("Failed to retrieve result");
+            if(data != null){
+                NewsAdapter adapter = new NewsAdapter(data, new NewsAdapter.ItemClickListener() {
+                    @Override
+                    public void onItemClick(int clickedItemIndex) {
+                        String url = data.get(clickedItemIndex).getUrl();
+
+                        Uri webpage = Uri.parse(url);
+                        Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+                        if(intent.resolveActivity(getPackageManager()) != null) {
+                            startActivity(intent);
+                        }
+
+                    }
+                });
+
+                recyclerView.setAdapter(adapter);
             }
             else{
-                textView.setText(s);
+                //textView.setText(s);
             }
         }
     }
