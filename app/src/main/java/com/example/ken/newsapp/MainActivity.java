@@ -1,9 +1,12 @@
 package com.example.ken.newsapp;
 
 import android.content.Intent;
-import android.net.Network;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.os.AsyncTask;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.AsyncTaskLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -12,9 +15,10 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
 import android.widget.ProgressBar;
-import android.widget.TextView;
+
+import com.example.ken.newsapp.data.Contract;
+import com.example.ken.newsapp.data.DBHelper;
 
 import org.json.JSONException;
 
@@ -22,14 +26,17 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Void>, NewsAdapter.ItemClickListener{
 
     private static final String TAG = "MainActivity";
 
     private ProgressBar progressBar;
-    //private TextView textView;
 
     private RecyclerView recyclerView;
+    private NewsAdapter adapter;
+
+    private SQLiteDatabase db;
+    private Cursor cursor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,10 +44,22 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        //textView = (TextView) findViewById(R.id.resultText);
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        db = new DBHelper(MainActivity.this).getReadableDatabase();
+
+        cursor = DatabaseUtils.getAll(db);
+
+        adapter = new NewsAdapter(cursor, this);
+
+        recyclerView.setAdapter(adapter);
     }
 
     @Override
@@ -54,73 +73,112 @@ public class MainActivity extends AppCompatActivity {
         int itemNum = item.getItemId();
 
         if(itemNum == R.id.search){
-            NetworkTask networkTask = new NetworkTask();
-            networkTask.execute();
+            Bundle argsBundle = new Bundle();
+
+            LoaderManager loaderManager = getSupportLoaderManager();
+            Loader<ArrayList<NewsItem>> loader = loaderManager.getLoader(1);
+
+            if(loader == null){
+                loaderManager.initLoader(1, argsBundle, this).forceLoad();
+            }
+            else{
+                loaderManager.restartLoader(1, argsBundle, this);
+            }
+
         }
 
         return true;
     }
 
-    class NetworkTask extends AsyncTask<URL, Void, ArrayList<NewsItem>>{
+    @Override
+    public Loader<Void> onCreateLoader(int id, final Bundle args) {
+        return new AsyncTaskLoader<Void>(this) {
 
-        String searchQuery;
-        String sortBy;
-        String apiKey;
-
-        NetworkTask(){
-            searchQuery = "the-next-web";
-            sortBy = "latest";
-            apiKey = "4bbc5a00be8d40448ad056a1acc0d68a";
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            progressBar.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected ArrayList<NewsItem> doInBackground(URL... params) {
-            ArrayList<NewsItem> newsItemsList = null;
-            URL url = NetworkUtils.makeURL(searchQuery, sortBy, apiKey);
-            Log.d(TAG, url.toString());
-            try {
-                String result = NetworkUtils.getResponseFromHttpUrl(url);
-                newsItemsList = NetworkUtils.parseJSON(result);
-            } catch (IOException e) {
-                e.printStackTrace();
+            @Override
+            protected void onStartLoading() {
+                super.onStartLoading();
+                if(args == null){
+                    return;
+                }
+                progressBar.setVisibility(View.VISIBLE);
             }
-            catch (JSONException e){
-                e.printStackTrace();
+
+            @Override
+            public Void loadInBackground() {
+
+                RefreshUtils.updateNewsArticles(MainActivity.this);
+
+                return null;
+
+
+                /*
+                String searchQuery = "the-next-web";
+                String sortBy = "latest";
+                String apiKey = "4bbc5a00be8d40448ad056a1acc0d68a";
+
+                ArrayList<NewsItem> newsItemsList = null;
+                URL url = NetworkUtils.makeURL(searchQuery, sortBy, apiKey);
+                Log.d(TAG, url.toString());
+                try {
+                    String result = NetworkUtils.getResponseFromHttpUrl(url);
+                    newsItemsList = NetworkUtils.parseJSON(result);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                catch (JSONException e){
+                    e.printStackTrace();
+                }
+                return newsItemsList;
+                */
             }
-            return newsItemsList;
-        }
+        };
+    }
 
-        @Override
-        protected void onPostExecute(final ArrayList<NewsItem> data) {
-            super.onPostExecute(data);
-            progressBar.setVisibility(View.GONE);
+    @Override
+    public void onLoadFinished(Loader<Void> loader, Void data) {
+        progressBar.setVisibility(View.GONE);
 
-            if(data != null){
-                NewsAdapter adapter = new NewsAdapter(data, new NewsAdapter.ItemClickListener() {
-                    @Override
-                    public void onItemClick(int clickedItemIndex) {
-                        String url = data.get(clickedItemIndex).getUrl();
+        db = new DBHelper(MainActivity.this).getReadableDatabase();
+        cursor = DatabaseUtils.getAll(db);
 
-                        Uri webpage = Uri.parse(url);
-                        Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
-                        if(intent.resolveActivity(getPackageManager()) != null) {
-                            startActivity(intent);
-                        }
+        adapter = new NewsAdapter(cursor, this);
+        recyclerView.setAdapter(adapter);
+        adapter.notifyDataSetChanged();
 
+        /*
+        if(data != null){
+            NewsAdapter adapter = new NewsAdapter(data, new NewsAdapter.ItemClickListener() {
+                @Override
+                public void onItemClick(int clickedItemIndex) {
+                    String url = data.get(clickedItemIndex).getUrl();
+
+                    Uri webpage = Uri.parse(url);
+                    Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+                    if(intent.resolveActivity(getPackageManager()) != null) {
+                        startActivity(intent);
                     }
-                });
 
-                recyclerView.setAdapter(adapter);
-            }
-            else{
-                //textView.setText(s);
-            }
+                }
+            });
+
+            recyclerView.setAdapter(adapter);
         }
+        */
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Void> loader) {
+
+    }
+
+    @Override
+    public void onItemClick(Cursor cursor, int clickedItemIndex) {
+        cursor.moveToPosition(clickedItemIndex);
+        String url = cursor.getString(cursor.getColumnIndex(Contract.TABLE_ARTICLES.COLUMN_NAME_URLTOIMAGE));
+
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse(url));
+        startActivity(intent);
     }
 }
