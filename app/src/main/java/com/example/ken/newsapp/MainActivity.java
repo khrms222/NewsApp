@@ -1,9 +1,11 @@
 package com.example.ken.newsapp;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
@@ -38,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private SQLiteDatabase db;
     private Cursor cursor;
 
+    private boolean firstLaunch;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,6 +51,18 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         recyclerView = (RecyclerView) findViewById(R.id.recyclerView);
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean firstLaunch = prefs.getBoolean("firstLaunch", true);
+
+        if (firstLaunch) {
+            load();
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putBoolean("isfirst", false);
+            editor.commit();
+        }
+
+        ScheduleUtils.scheduleRefresh(this);
     }
 
     @Override
@@ -73,6 +89,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         int itemNum = item.getItemId();
 
         if(itemNum == R.id.search){
+            load();
+            /*
             Bundle argsBundle = new Bundle();
 
             LoaderManager loaderManager = getSupportLoaderManager();
@@ -84,6 +102,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             else{
                 loaderManager.restartLoader(1, argsBundle, this);
             }
+            */
 
         }
 
@@ -97,16 +116,17 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             @Override
             protected void onStartLoading() {
                 super.onStartLoading();
-                if(args == null){
-                    return;
-                }
                 progressBar.setVisibility(View.VISIBLE);
+
+                Log.d("tagmsg", "onStartLoading");
             }
 
             @Override
             public Void loadInBackground() {
 
                 RefreshUtils.updateNewsArticles(MainActivity.this);
+
+                Log.d("tagmsg", "loadInBackground");
 
                 return null;
 
@@ -145,6 +165,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         recyclerView.setAdapter(adapter);
         adapter.notifyDataSetChanged();
 
+        Log.d("tagmsg", "onLoadFinished");
+
         /*
         if(data != null){
             NewsAdapter adapter = new NewsAdapter(data, new NewsAdapter.ItemClickListener() {
@@ -180,5 +202,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(Uri.parse(url));
         startActivity(intent);
+    }
+
+    public void load() {
+        LoaderManager loaderManager = getSupportLoaderManager();
+        loaderManager.restartLoader(1, null, this).forceLoad();
     }
 }
