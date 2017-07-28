@@ -16,15 +16,28 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class NetworkUtils {
+    //Base url to fetch json of news articles
     public static final String NEWSAPI_BASE_URL = "https://newsapi.org/v1/articles";
+
+    //Url query parameter to filter by source
     public static final String PARAM_SOURCE = "source";
+
+    //Url query parameter to sort
     public static final String PARAM_SORT = "sortBy";
+
+    //Url query parameter to authenticate the user with an API Key
     public static final String PARAM_APIKEY = "apiKey";
 
     private static String sourceQuery = "the-next-web";
     private static String sortBy = "latest";
     private static String apiKey = "4bbc5a00be8d40448ad056a1acc0d68a";
 
+
+    /*
+    *
+    *   Makes a url by appending the base url with its parameters
+    *
+    * */
     public static URL makeURL(){
         Uri uri = Uri.parse(NEWSAPI_BASE_URL).buildUpon().appendQueryParameter(PARAM_SOURCE, sourceQuery).appendQueryParameter(PARAM_SORT, sortBy).appendQueryParameter(PARAM_APIKEY, apiKey).build();
 
@@ -38,6 +51,11 @@ public class NetworkUtils {
         return url;
     }
 
+    /*
+    *
+    *   Http call to fetch a json from a web service.
+    *
+    * */
     public static String getResponseFromHttpUrl(URL url) throws IOException{
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
 
@@ -60,6 +78,11 @@ public class NetworkUtils {
         }
     }
 
+    /*
+    *
+    *   Parse the json into an ArrayList of usable java objects
+    *
+    * */
     public static ArrayList<NewsItem> parseJSON(String json) throws JSONException{
         ArrayList<NewsItem> newsItemsList = new ArrayList<NewsItem>();
 

@@ -16,18 +16,26 @@ import com.firebase.jobdispatcher.Trigger;
  */
 
 public class ScheduleUtils {
+
+    //The amount of minutes to refresh the database
     private static final int SCHEDULE_INTERVAL_MINUTES = 1;
+
+    //A time window given to complete the job.
     private static final int SYNC_FLEXTIME_SECONDS = 10;
+
     private static final String NEWS_JOB_TAG = "news_job_tag";
 
+    //Make sure we only have 1 instance of this class to call from
     private static boolean sInitialized;
 
     synchronized public static void scheduleRefresh(@NonNull final Context context){
         if(sInitialized) return;
 
+        //Creating a job object
         Driver driver = new GooglePlayDriver(context);
         FirebaseJobDispatcher dispatcher = new FirebaseJobDispatcher(driver);
 
+        //Set the details of the job and set the job to NewsJob
         Job constraintRefreshJob = dispatcher.newJobBuilder()
                 .setService(NewsJob.class)
                 .setTag(NEWS_JOB_TAG)
@@ -39,6 +47,7 @@ public class ScheduleUtils {
                 .setReplaceCurrent(true)
                 .build();
 
+        //Set the details of the job to the jobdispatcher
         dispatcher.schedule(constraintRefreshJob);
         sInitialized = true;
 

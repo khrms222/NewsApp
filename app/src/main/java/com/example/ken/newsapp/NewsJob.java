@@ -13,6 +13,12 @@ import com.firebase.jobdispatcher.JobService;
 public class NewsJob extends JobService {
     AsyncTask mBackgroundTask;
 
+    /*
+    *
+    *   The job to perform in the background service when ScheduleUitls is called.
+    *   Update the database whenever this job is performed.
+    *
+    * */
     @Override
     public boolean onStartJob(final JobParameters job) {
         mBackgroundTask = new AsyncTask() {
@@ -42,6 +48,9 @@ public class NewsJob extends JobService {
         return true;
     }
 
+    /*
+    *   Stop the background task
+    * */
     @Override
     public boolean onStopJob(JobParameters job) {
 

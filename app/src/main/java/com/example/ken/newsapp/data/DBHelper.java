@@ -7,13 +7,21 @@ import android.util.Log;
 
 public class DBHelper extends SQLiteOpenHelper{
 
+    //Name of the database to create in the local device.
     private static final String DATABASE_NAME = "news.db";
+
     private static final int DATABASE_VERSION = 1;
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    /*
+    *
+    *   This method is called when first creating the database
+    *   This will create the database table and its associating columns.
+    *
+    * */
     @Override
     public void onCreate(SQLiteDatabase db) {
 

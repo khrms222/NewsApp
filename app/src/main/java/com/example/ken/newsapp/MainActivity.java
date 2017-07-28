@@ -37,9 +37,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private RecyclerView recyclerView;
     private NewsAdapter adapter;
 
+    //A reference to the device's local sqllite database.
     private SQLiteDatabase db;
+
+    //A reference to a cursor indicating a position in a database record(s).
     private Cursor cursor;
 
+    //A bool variable to keep track if its the first time launching this app...
     private boolean firstLaunch;
 
     @Override
@@ -52,7 +56,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
+        //Get a reference to the device's local preferences for this app
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+        //Check if "firstLaunch" already exists, if it does, then the app was previously launched
+        // If not, store fireLaunch in the shared prefs
         boolean firstLaunch = prefs.getBoolean("firstLaunch", true);
 
         if (firstLaunch) {
@@ -69,8 +77,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     protected void onStart() {
         super.onStart();
 
+        //Instantiate the database reference.
         db = new DBHelper(MainActivity.this).getReadableDatabase();
 
+        //Get all the records in the database and store it in cursor.
         cursor = DatabaseUtils.getAll(db);
 
         adapter = new NewsAdapter(cursor, this);
@@ -89,26 +99,16 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         int itemNum = item.getItemId();
 
         if(itemNum == R.id.search){
+            //When the search menu item is clicked call load()
             load();
-            /*
-            Bundle argsBundle = new Bundle();
-
-            LoaderManager loaderManager = getSupportLoaderManager();
-            Loader<ArrayList<NewsItem>> loader = loaderManager.getLoader(1);
-
-            if(loader == null){
-                loaderManager.initLoader(1, argsBundle, this).forceLoad();
-            }
-            else{
-                loaderManager.restartLoader(1, argsBundle, this);
-            }
-            */
-
         }
 
         return true;
     }
 
+    /*
+    *   A asynctaskloader to refresh the database when search is clicked.
+    * */
     @Override
     public Loader<Void> onCreateLoader(int id, final Bundle args) {
         return new AsyncTaskLoader<Void>(this) {
@@ -124,32 +124,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             @Override
             public Void loadInBackground() {
 
+                //Method to refresh the database...
                 RefreshUtils.updateNewsArticles(MainActivity.this);
 
                 Log.d("tagmsg", "loadInBackground");
 
                 return null;
-
-
-                /*
-                String searchQuery = "the-next-web";
-                String sortBy = "latest";
-                String apiKey = "4bbc5a00be8d40448ad056a1acc0d68a";
-
-                ArrayList<NewsItem> newsItemsList = null;
-                URL url = NetworkUtils.makeURL(searchQuery, sortBy, apiKey);
-                Log.d(TAG, url.toString());
-                try {
-                    String result = NetworkUtils.getResponseFromHttpUrl(url);
-                    newsItemsList = NetworkUtils.parseJSON(result);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                catch (JSONException e){
-                    e.printStackTrace();
-                }
-                return newsItemsList;
-                */
             }
         };
     }
@@ -158,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public void onLoadFinished(Loader<Void> loader, Void data) {
         progressBar.setVisibility(View.GONE);
 
+        //Reset the cursor to the new updated database
         db = new DBHelper(MainActivity.this).getReadableDatabase();
         cursor = DatabaseUtils.getAll(db);
 
@@ -167,26 +148,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         Log.d("tagmsg", "onLoadFinished");
 
-        /*
-        if(data != null){
-            NewsAdapter adapter = new NewsAdapter(data, new NewsAdapter.ItemClickListener() {
-                @Override
-                public void onItemClick(int clickedItemIndex) {
-                    String url = data.get(clickedItemIndex).getUrl();
-
-                    Uri webpage = Uri.parse(url);
-                    Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
-                    if(intent.resolveActivity(getPackageManager()) != null) {
-                        startActivity(intent);
-                    }
-
-                }
-            });
-
-            recyclerView.setAdapter(adapter);
-        }
-        */
-
     }
 
     @Override
@@ -194,6 +155,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     }
 
+    /*
+    *   When a NewsItem view object is clicked, open the news article in a browser.
+    * */
     @Override
     public void onItemClick(Cursor cursor, int clickedItemIndex) {
         cursor.moveToPosition(clickedItemIndex);

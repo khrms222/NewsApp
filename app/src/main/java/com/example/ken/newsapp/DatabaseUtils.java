@@ -14,6 +14,9 @@ import java.util.ArrayList;
 
 public class DatabaseUtils {
 
+    /*
+    *   Returns all records in the database and orders them descending by publish date
+    * */
     public static Cursor getAll(SQLiteDatabase db){
         Cursor cursor = db.query(
                 Contract.TABLE_ARTICLES.TABLE_NAME,
@@ -27,6 +30,11 @@ public class DatabaseUtils {
         return cursor;
     }
 
+
+    /*
+    *   Insert multiple records into the database by passing in an ArrayList of NewsItems
+    *   We do this in one transaction for efficiency.
+    **/
     public static void bulkInsert(SQLiteDatabase db, ArrayList<NewsItem> newsArticles) {
 
         db.beginTransaction();
@@ -46,6 +54,9 @@ public class DatabaseUtils {
         }
     }
 
+    /*
+    *   Deletes all records in the database.
+    * */
     public static void deleteAll(SQLiteDatabase db) {
         db.delete(Contract.TABLE_ARTICLES.TABLE_NAME, null, null);
     }

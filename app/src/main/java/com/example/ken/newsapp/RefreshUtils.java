@@ -12,6 +12,14 @@ import java.net.URL;
 import java.util.ArrayList;
 
 public class RefreshUtils {
+
+    /*
+    *
+    *   This method updates the database
+    *   Delete all existing records in the database.
+    *   Fetch the new json from the API and store it into the database.
+    *
+    * */
     public static void updateNewsArticles(Context context){
         ArrayList<NewsItem> result = null;
         URL url = NetworkUtils.makeURL();

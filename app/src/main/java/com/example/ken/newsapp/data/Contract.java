@@ -9,7 +9,11 @@ import android.provider.BaseColumns;
 public class Contract {
 
     public static class TABLE_ARTICLES implements BaseColumns {
+
+        //The name of the table in the database
         public static final String TABLE_NAME = "news";
+
+        //Name of the columns in the database
         public static final String COLUMN_NAME_TITLE = "title";
         public static final String COLUMN_NAME_DESCRIPTION = "description";
         public static final String COLUMN_NAME_URLTOIMAGE = "url";
